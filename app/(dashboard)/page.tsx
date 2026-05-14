@@ -33,11 +33,13 @@ export default async function DashboardPage() {
     { data: recentExpenses }, { data: upcomingReminders }, { data: activeGoals },
     { data: learningPaths }, { data: profile },
   ] = await Promise.all([
-    // Tasks: show today's + overdue (not done) so nothing gets lost
+    // Tasks: ALL non-done tasks — no date filter so nothing is ever hidden
     supabase.from("tasks").select("*").eq("user_id", user.id)
-      .or(`due_date.eq.${today},and(due_date.lt.${today},status.neq.done)`)
-      .order("due_date", { ascending: false }).order("priority", { ascending: false }).limit(10),
-    // Projects: show all except cancelled so planning projects appear too
+      .neq("status", "done")
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(10),
+    // Projects: everything except cancelled
     supabase.from("projects").select("*").eq("user_id", user.id)
       .neq("status", "cancelled").order("created_at", { ascending: false }).limit(4),
     supabase.from("habits").select("*").eq("user_id", user.id).eq("is_active", true),
@@ -45,8 +47,10 @@ export default async function DashboardPage() {
     supabase.from("gym_logs").select("*").eq("user_id", user.id).eq("workout_date", today).maybeSingle(),
     supabase.from("skincare_logs").select("*").eq("user_id", user.id).eq("log_date", today),
     supabase.from("expenses").select("amount").eq("user_id", user.id).gte("expense_date", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]),
-    supabase.from("reminders").select("*").eq("user_id", user.id).eq("is_completed", false).gte("due_date", today).order("due_date").limit(5),
-    // Goals: show all except abandoned so not_started goals appear too
+    // Reminders: ALL non-completed (overdue AND upcoming) ordered by date
+    supabase.from("reminders").select("*").eq("user_id", user.id)
+      .eq("is_completed", false).order("due_date").limit(5),
+    // Goals: everything except abandoned
     supabase.from("goals").select("*").eq("user_id", user.id)
       .neq("status", "abandoned").order("created_at", { ascending: false }).limit(4),
     supabase.from("learning_paths").select("*").eq("user_id", user.id).eq("is_active", true).limit(3),
@@ -80,7 +84,7 @@ function DashboardShell({ userId, profile, today, todayTasks, activeProjects, to
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={CheckSquare} label="Tasks Today" value={`${tasksDone}/${todayTasks.length}`} sub="completed" color="text-blue-400" bg="bg-blue-500/10" />
+        <StatCard icon={CheckSquare} label="Active Tasks" value={`${tasksDone}/${todayTasks.length}`} sub="completed" color="text-blue-400" bg="bg-blue-500/10" />
         <StatCard icon={Activity} label="Habits" value={`${habitsCompleted}/${todayHabits.length}`} sub="checked off" color="text-green-400" bg="bg-green-500/10" />
         <StatCard icon={Dumbbell} label="Gym" value={todayGym ? "Done ✓" : "Not yet"} sub="today" color="text-red-400" bg="bg-red-500/10" />
         <StatCard icon={Wallet} label="Spent" value={formatCurrency(monthlySpend)} sub="this month" color="text-yellow-400" bg="bg-yellow-500/10" />
@@ -90,13 +94,13 @@ function DashboardShell({ userId, profile, today, todayTasks, activeProjects, to
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2"><CheckSquare className="w-4 h-4 text-blue-400" />Today&apos;s Tasks</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2"><CheckSquare className="w-4 h-4 text-blue-400" />Tasks</CardTitle>
               <Link href="/tasks" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">View all <ArrowRight className="w-3 h-3" /></Link>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {!todayTasks.length ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No tasks due today — <Link href="/tasks" className="text-red-400 hover:underline">add some</Link>.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No active tasks — <Link href="/tasks" className="text-red-400 hover:underline">add some</Link>.</p>
             ) : todayTasks.map((task: any) => (
               <div key={task.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/50">
                 <div className={`w-2 h-2 rounded-full shrink-0 ${task.status === "done" ? "bg-green-400" : task.status === "in_progress" ? "bg-blue-400" : "bg-zinc-500"}`} />
