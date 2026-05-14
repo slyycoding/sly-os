@@ -182,31 +182,23 @@ export function GymClient({ initialLogs, initialExercises, userId }: GymClientPr
                   <CardContent className="pt-0 border-t border-border">
                     {log.notes && <p className="text-xs text-muted-foreground mb-3">{log.notes}</p>}
                     {logExercises.length ? (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-12 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                          <span className="col-span-4">Exercise</span>
-                          <span className="col-span-2 text-center">Sets</span>
-                          <span className="col-span-2 text-center">Reps</span>
-                          <span className="col-span-3 text-center">Weight</span>
-                          <span className="col-span-1" />
-                        </div>
+                      <div className="space-y-1.5">
                         {logExercises.map((ex) => (
-                          <div key={ex.id} className="grid grid-cols-12 items-center text-sm px-1 py-1 rounded hover:bg-secondary/30">
-                            <div className="col-span-4 flex items-center gap-1">
-                              <span className="truncate">{ex.name}</span>
+                          <div key={ex.id} className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-secondary/30 text-sm">
+                            <div className="flex-1 flex items-center gap-1 min-w-0">
+                              <span className="font-medium truncate">{ex.name}</span>
                               {ex.is_pr && <Trophy className="w-3 h-3 text-yellow-400 shrink-0" />}
                             </div>
-                            <span className="col-span-2 text-center text-muted-foreground">{ex.sets}</span>
-                            <span className="col-span-2 text-center text-muted-foreground">{ex.reps ?? "—"}</span>
-                            <span className="col-span-3 text-center text-muted-foreground">{ex.weight_kg ? `${ex.weight_kg}kg` : "BW"}</span>
-                            <div className="col-span-1 flex justify-end">
-                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={async () => {
-                                await supabase.from("exercises").delete().eq("id", ex.id);
-                                setExercises((prev) => prev.filter((e) => e.id !== ex.id));
-                              }}>
-                                <Trash2 className="w-3 h-3 text-muted-foreground" />
-                              </Button>
+                            <div className="flex items-center gap-2 text-muted-foreground text-xs shrink-0">
+                              <span>{ex.sets}×{ex.reps ?? "—"}</span>
+                              <span>{ex.weight_kg ? `${ex.weight_kg}kg` : "BW"}</span>
                             </div>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={async () => {
+                              await supabase.from("exercises").delete().eq("id", ex.id);
+                              setExercises((prev) => prev.filter((e) => e.id !== ex.id));
+                            }}>
+                              <Trash2 className="w-3 h-3 text-muted-foreground" />
+                            </Button>
                           </div>
                         ))}
                       </div>

@@ -4,7 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register");
+    request.nextUrl.pathname.startsWith("/register") ||
+    request.nextUrl.pathname.startsWith("/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/reset-password");
 
   // Demo mode bypass — let any page through if demo cookie is set
   const demoCookie = request.cookies.get("sly-demo");

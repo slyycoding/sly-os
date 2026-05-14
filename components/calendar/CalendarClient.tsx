@@ -125,11 +125,12 @@ export function CalendarClient({ initialEvents, tasks, userId }: CalendarClientP
       </div>
 
       {/* Calendar grid */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card">
+      <div className="rounded-xl border border-border overflow-hidden bg-card overflow-x-auto">
+        <div className="min-w-[320px]">
         {/* Day headers */}
         <div className="grid grid-cols-7 border-b border-border">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
+          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+            <div key={i} className="py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
           ))}
         </div>
 
@@ -179,6 +180,7 @@ export function CalendarClient({ initialEvents, tasks, userId }: CalendarClientP
               </div>
             );
           })}
+        </div>
         </div>
       </div>
 

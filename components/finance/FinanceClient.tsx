@@ -149,7 +149,7 @@ export function FinanceClient({ initialIncome, initialExpenses, initialDebts, in
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="mb-4 flex-wrap h-auto">
+        <TabsList className="mb-4 w-full overflow-x-auto flex h-auto justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="bills">Bills</TabsTrigger>

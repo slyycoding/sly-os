@@ -54,7 +54,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo login — prominent */}
+        {/* Demo login */}
         <button
           onClick={handleDemoLogin}
           className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border border-red-500/40 bg-red-500/10 text-red-400 font-semibold text-sm hover:bg-red-500/20 transition-colors"
@@ -81,7 +81,12 @@ export default function LoginPage() {
                 <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-red-400 transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
               </div>
               {error && (
