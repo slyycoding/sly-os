@@ -24,10 +24,12 @@ export function QuickAddModal({ open, onClose, userId }: QuickAddModalProps) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   // Task state
   const [taskTitle, setTaskTitle] = useState("");
   const [taskPriority, setTaskPriority] = useState("medium");
-  const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskDueDate, setTaskDueDate] = useState(todayStr);
 
   // Note state
   const [noteTitle, setNoteTitle] = useState("");
@@ -43,7 +45,7 @@ export function QuickAddModal({ open, onClose, userId }: QuickAddModalProps) {
   const [logMood, setLogMood] = useState("7");
 
   function reset() {
-    setTaskTitle(""); setTaskPriority("medium"); setTaskDueDate("");
+    setTaskTitle(""); setTaskPriority("medium"); setTaskDueDate(todayStr);
     setNoteTitle(""); setNoteContent("");
     setExpenseTitle(""); setExpenseAmount(""); setExpenseCategory("general");
     setLogNote(""); setLogMood("7");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Task } from "@/lib/types";
@@ -35,10 +35,10 @@ interface TasksClientProps {
   userId: string;
 }
 
-const EMPTY: Partial<Task> = {
+const getEmpty = (): Partial<Task> => ({
   title: "", description: "", status: "not_started", priority: "medium",
-  due_date: null, due_time: null, tags: [], project_id: null,
-};
+  due_date: new Date().toISOString().split("T")[0], due_time: null, tags: [], project_id: null,
+});
 
 export function TasksClient({ initialTasks, projects, userId }: TasksClientProps) {
   const router = useRouter();
@@ -48,9 +48,25 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Partial<Task>>(EMPTY);
+  const [editing, setEditing] = useState<Partial<Task>>(getEmpty());
   const [saving, setSaving] = useState(false);
   const [tagInput, setTagInput] = useState("");
+
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  // Auto-clear: delete done tasks from previous days on mount
+  useEffect(() => {
+    const donePastTasks = tasks.filter(
+      (t) => t.status === "done" && t.due_date && t.due_date < today
+    );
+    if (!donePastTasks.length) return;
+
+    const ids = donePastTasks.map((t) => t.id);
+    supabase.from("tasks").delete().in("id", ids).then(() => {
+      setTasks((prev) => prev.filter((t) => !ids.includes(t.id)));
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
@@ -61,10 +77,11 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
     });
   }, [tasks, search, statusFilter, priorityFilter]);
 
-  const today = format(new Date(), "yyyy-MM-dd");
   const todayTasks = filtered.filter((t) => t.due_date === today);
   const upcomingTasks = filtered.filter((t) => t.due_date && t.due_date > today);
-  const otherTasks = filtered.filter((t) => !t.due_date || t.due_date < today);
+  // "No due date" tasks appear under Other — not overdue ones (those auto-cleared if done)
+  const otherTasks = filtered.filter((t) => !t.due_date);
+  const overdueTasks = filtered.filter((t) => t.due_date && t.due_date < today);
 
   async function toggleDone(task: Task) {
     const newStatus = task.status === "done" ? "not_started" : "done";
@@ -108,7 +125,7 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
     }
     setSaving(false);
     setDialogOpen(false);
-    setEditing(EMPTY);
+    setEditing(getEmpty());
   }
 
   async function deleteTask(id: string) {
@@ -117,7 +134,7 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
     toast({ title: "Task deleted" });
   }
 
-  function openNew() { setEditing(EMPTY); setTagInput(""); setDialogOpen(true); }
+  function openNew() { setEditing(getEmpty()); setTagInput(""); setDialogOpen(true); }
   function openEdit(task: Task) { setEditing({ ...task }); setTagInput((task.tags ?? []).join(", ")); setDialogOpen(true); }
 
   function handleTagInput(val: string) {
@@ -133,11 +150,11 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
     return map[status] ?? "outline";
   };
 
-  const renderTaskGroup = (label: string, items: Task[]) => {
+  const renderTaskGroup = (label: string, items: Task[], accent?: string) => {
     if (!items.length) return null;
     return (
       <div className="space-y-1.5">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">{label}</p>
+        <p className={`text-xs font-semibold uppercase tracking-wider px-1 ${accent ?? "text-muted-foreground"}`}>{label}</p>
         {items.map((task) => (
           <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-secondary/30 transition-colors group">
             <Checkbox
@@ -227,13 +244,14 @@ export function TasksClient({ initialTasks, projects, userId }: TasksClientProps
           <>
             {renderTaskGroup("Today", todayTasks)}
             {renderTaskGroup("Upcoming", upcomingTasks)}
-            {renderTaskGroup("Other", otherTasks)}
+            {renderTaskGroup("⚠ Overdue", overdueTasks, "text-red-400")}
+            {renderTaskGroup("No due date", otherTasks)}
           </>
         )}
       </div>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { setDialogOpen(false); setEditing(EMPTY); } }}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { setDialogOpen(false); setEditing(getEmpty()); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing.id ? "Edit Task" : "New Task"}</DialogTitle>

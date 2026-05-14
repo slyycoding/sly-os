@@ -33,15 +33,22 @@ export default async function DashboardPage() {
     { data: recentExpenses }, { data: upcomingReminders }, { data: activeGoals },
     { data: learningPaths }, { data: profile },
   ] = await Promise.all([
-    supabase.from("tasks").select("*").eq("user_id", user.id).eq("due_date", today).order("priority", { ascending: false }).limit(8),
-    supabase.from("projects").select("*").eq("user_id", user.id).eq("status", "active").order("deadline").limit(4),
+    // Tasks: show today's + overdue (not done) so nothing gets lost
+    supabase.from("tasks").select("*").eq("user_id", user.id)
+      .or(`due_date.eq.${today},and(due_date.lt.${today},status.neq.done)`)
+      .order("due_date", { ascending: false }).order("priority", { ascending: false }).limit(10),
+    // Projects: show all except cancelled so planning projects appear too
+    supabase.from("projects").select("*").eq("user_id", user.id)
+      .neq("status", "cancelled").order("created_at", { ascending: false }).limit(4),
     supabase.from("habits").select("*").eq("user_id", user.id).eq("is_active", true),
     supabase.from("habit_logs").select("*").eq("user_id", user.id).eq("log_date", today),
     supabase.from("gym_logs").select("*").eq("user_id", user.id).eq("workout_date", today).maybeSingle(),
     supabase.from("skincare_logs").select("*").eq("user_id", user.id).eq("log_date", today),
     supabase.from("expenses").select("amount").eq("user_id", user.id).gte("expense_date", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]),
     supabase.from("reminders").select("*").eq("user_id", user.id).eq("is_completed", false).gte("due_date", today).order("due_date").limit(5),
-    supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "in_progress").limit(4),
+    // Goals: show all except abandoned so not_started goals appear too
+    supabase.from("goals").select("*").eq("user_id", user.id)
+      .neq("status", "abandoned").order("created_at", { ascending: false }).limit(4),
     supabase.from("learning_paths").select("*").eq("user_id", user.id).eq("is_active", true).limit(3),
     supabase.from("profiles").select("full_name").eq("id", user.id).single(),
   ]);
